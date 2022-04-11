@@ -69,11 +69,15 @@
             margin-left: 10px;
             vertical-align: bottom;
         }
+
+        [v-cloak] {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
-    <div class="outside-box" id="app">
+    <div class="outside-box" id="app" v-cloak>
         <div class="top-box">
             <el-header>
                 <el-card id="header-card"> {{title}} {{version + '版本'}}</el-card>
@@ -437,24 +441,24 @@
 
         }
 
-        const room_raw =  {
-                    "name": "主播1",
-                    "uploadLocalFile": true,
-                    "deleteLocalFile": true,
-                    "templateTitle": "{{name}}{{time}} 直播",
-                    "delayTime": 0,
-                    "desc": "",
-                    "source": "",
-                    "dynamic": "",
-                    "copyright": 2,
-                    "roomUrl": "https://live.xxx.com/111",
-                    "tid": 121,
-                    "tags": [
-                        "tag1",
-                        "tag2",
-                        "tag3"
-                    ]
-                }
+        const room_raw = {
+            "name": "主播1",
+            "uploadLocalFile": true,
+            "deleteLocalFile": true,
+            "templateTitle": "{{name}}{{time}} 直播",
+            "delayTime": 0,
+            "desc": "",
+            "source": "",
+            "dynamic": "",
+            "copyright": 2,
+            "roomUrl": "https://live.xxx.com/111",
+            "tid": 121,
+            "tags": [
+                "tag1",
+                "tag2",
+                "tag3"
+            ]
+        }
 
         const vm = new Vue({
             el: "#app",
@@ -466,7 +470,7 @@
                 roomDialogVisible: false,
                 inputVisible: false,
                 inputValue: '',
-                roomFlag:-1,
+                roomFlag: -1,
                 userDialogValues: {
                     "debug": false,
                     "roomCheckTime": 600,
@@ -583,12 +587,12 @@
                 },
                 roomEvent() {
                     this.roomDialogVisible = false;
-                    if(this.roomFlag==-1){
+                    if (this.roomFlag == -1) {
                         this.infoObject.streamerInfo.push(this.oneRoom);
                         this.oneRoom = deepCopy(room_raw);
-                    }else{
-                        const x =  deepCopy(this.oneRoom);
-                        this.infoObject.streamerInfo.splice(this.roomFlag,1,x);
+                    } else {
+                        const x = deepCopy(this.oneRoom);
+                        this.infoObject.streamerInfo.splice(this.roomFlag, 1, x);
                         this.oneRoom = deepCopy(room_raw);
                         console.log(this.textarea1);
                     }
