@@ -80,7 +80,8 @@
     <div class="outside-box" id="app" v-cloak>
         <div class="top-box">
             <el-header>
-                <el-card id="header-card"> {{title}} {{version + '版本'}} By: <a href="https://github.com/ni00/StreamerHelperTool">倪小白</a> </el-card>
+                <el-card id="header-card"> {{title}} {{version + '版本'}} By: <a
+                        href="https://github.com/ni00/StreamerHelperTool">倪小白</a> </el-card>
             </el-header>
         </div>
         <el-card class="bottom-box">
@@ -566,6 +567,7 @@
 
                 deleteInfoJson() {
                     this.textarea1 = json_raw;
+                    localStorage.clear();
                 },
 
                 card_add() {
@@ -594,7 +596,6 @@
                         const x = deepCopy(this.oneRoom);
                         this.infoObject.streamerInfo.splice(this.roomFlag, 1, x);
                         this.oneRoom = deepCopy(room_raw);
-                        console.log(this.textarea1);
                     }
                 }
 
@@ -605,10 +606,17 @@
                         this.infoObject = JSON.parse(value);
                     },
                     get() {
-                        return JSON.stringify(this.infoObject, null, "\t")
+                        const x = JSON.stringify(this.infoObject, null, "\t");
+                        localStorage.setItem("infojson", x);
+                        return x
                     }
                 }
 
+            },
+            beforeMount() {
+                if (localStorage.getItem("infojson")) {
+                    this.infoObject = JSON.parse(localStorage.getItem("infojson"));
+                }
             },
         });
 
