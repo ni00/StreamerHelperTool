@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StreamerHelper配置助手</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.15.7/theme-chalk/index.css" />
+    <style>
+        * {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        .outside-box {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 10;
+            background-color: #eee;
+        }
+
+        .top-box {
+            height: 70px;
+        }
+
+        .bottom-box {
+            flex-grow: 1;
+            margin: 10px;
+        }
+
+        #list-card {
+            overflow-y: scroll;
+            height: 80vh;
+        }
+
+        #main {
+            padding: 10px;
+        }
+
+        #json-code {
+            height: 75vh;
+        }
+
+        .block {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+
+        .el-tag+.el-tag {
+            margin-left: 10px;
+        }
+
+        .button-new-tag {
+            margin-left: 10px;
+            height: 32px;
+            line-height: 30px;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .input-new-tag {
+            width: 90px;
+            margin-left: 10px;
+            vertical-align: bottom;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="outside-box" id="app">
+        <div class="top-box">
+            <el-header>
+                <el-card id="header-card"> {{title}} {{version + '版本'}}</el-card>
+            </el-header>
+        </div>
+        <el-card class="bottom-box">
+            <el-row id="main-box">
+                <el-col :span="6">
+                    <div id="aside">
+                        <div id="add" align="center">
+                            <el-button type="primary" icon="el-icon-plus" @click="card_add">添加录制信息</el-button>
+                            </el-button>
+                        </div>
+
+                        <el-card id="list-card">
+                            <!-- list-card -->
+                            <el-card v-for='(item,index) of infoObject.streamerInfo' class="box-card">
+                                <div slot="header" class="clearfix">
+                                    <span>{{item.name}}</span>
+                                    <el-button-group style="float: right; padding: 0 0">
+                                        <el-button size="mini" icon="el-icon-edit" @click="card_edit(index)">
+                                        </el-button>
+                                        <el-button size="mini" icon="el-icon-copy-document" @click="card_copy(index)">
+                                        </el-button>
+                                        <el-button size="mini" icon="el-icon-delete" @click="card_del(index)">
+                                        </el-button>
+                                    </el-button-group>
+                                </div>
+                                <div class="text item">
+                                    {{item.roomUrl}}<br>
+                                    {{item.desc}}<br>
+                                    <el-tag v-for="tag in item.tags" :key="tag" type="" effect="light">
+                                        {{ tag }}
+                                    </el-tag>
+                                </div>
+                            </el-card>
+                            <!-- list-card -->
+                    </div>
+                </el-col>
+                <el-col :span="18">
+                    <div id="main">
+                        <div align="center">
+                            <el-button-group>
+                                <el-button type="primary" icon="el-icon-edit" @click="userInfo">用户设置</el-button>
+                                <el-button type="success" icon="el-icon-download" @click="downloadInfoJson">下载配置
+                                </el-button>
+                                <el-button type="warning" icon="el-icon-upload2" id="fileImport" @click="clickLoad">上传配置
+                                </el-button>
+                                <el-button type="danger" icon="el-icon-delete" @click="deleteInfoJson">清空配置</el-button>
+                            </el-button-group>
+                        </div>
+
+                        <el-input id="json-code" type="textarea" :rows="25" placeholder="请输入内容" v-model="textarea1">
+                        </el-input>
+                    </div>
+                </el-col>
+            </el-row>
+        </el-card>
+
+        <!-- userDialog -->
+        <el-dialog title="用户设置" :visible.sync="userDialogVisible" width="40%" center>
+
+            <el-divider content-position="center">基础配置</el-divider>
+
+            <div class="block"><span>调试开关 </span>
+                <el-switch v-model="infoObject.StreamerHelper.debug" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
+            </div>
+            <div class="block">
+                <span class="demonstration">投稿检测间隔（秒）</span>
+                <el-input-number v-model="infoObject.StreamerHelper.roomCheckTime" label="秒">
+                </el-input-number>
+            </div>
+            <div class="block">
+                <span class="demonstration">录制检测间隔（秒）</span>
+                <el-input-number v-model="infoObject.StreamerHelper.recycleCheckTime" label="秒">
+                </el-input-number>
+            </div>
+            <div class="block">
+                <span class="demonstration">投稿时忽略小于此大小的文件(MB)</span>
+                <el-input-number v-model="infoObject.StreamerHelper.videoPartLimitSize" label="秒">
+                </el-input-number>
+            </div>
+            <div class="block">
+                <span class="demonstration">此级别之上（包括）的日志将被推送</span>
+                <el-radio-group v-model="infoObject.StreamerHelper.logLevel" size="mini">
+                    <el-radio-button label="trace"></el-radio-button>
+                    <el-radio-button label="debug"></el-radio-button>
+                    <el-radio-button label="info"></el-radio-button>
+                    <el-radio-button label="warn"></el-radio-button>
+                    <el-radio-button label="error"></el-radio-button>
+                </el-radio-group>
+            </div>
+
+            <el-divider content-position="center">邮箱配置</el-divider>
+            <div class="block"><span class="demonstration">邮箱推送</span>
+                <el-switch v-model="infoObject.StreamerHelper.push.mail.enable" active-color="#13ce66"
+                    inactive-color="#ff4949">
+                </el-switch>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">STMP 服务主机</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.StreamerHelper.push.mail.host" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div class="block">
+                <span class="demonstration">STMP 服务端口</span>
+                <el-input-number v-model="infoObject.StreamerHelper.push.mail.port" :min="0" :max="65535">
+                </el-input-number>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">STMP 服务邮箱</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.StreamerHelper.push.mail.from" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">STMP 服务密码</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.StreamerHelper.push.mail.pwd" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">接受者邮箱</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.StreamerHelper.push.mail.to" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div class="block"><span class="demonstration">安全服务</span>
+                <el-switch v-model="infoObject.StreamerHelper.push.mail.secure" active-color="#13ce66"
+                    inactive-color="#ff4949">
+                </el-switch>
+            </div>
+
+            <el-divider content-position="center">微信配置</el-divider>
+            <div class="block"><span class="demonstration">微信推送</span>
+                <el-switch v-model="infoObject.StreamerHelper.push.wechat.enable" active-color="#13ce66"
+                    inactive-color="#ff4949">
+                </el-switch>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">Server 酱 sendKey</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.StreamerHelper.push.wechat.sendKey" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <el-divider content-position="center">B站配置</el-divider>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">nickname</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.personInfo.nickname" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">access_token</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.personInfo.access_token" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">refresh_token</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="infoObject.personInfo.refresh_token" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div class="block">
+                <span class="demonstration">expires_in</span>
+                <el-input-number v-model="infoObject.personInfo.expires_in">
+                </el-input-number>
+            </div>
+            <div class="block">
+                <span class="demonstration">tokenSignDate</span>
+                <el-input-number v-model="infoObject.personInfo.tokenSignDate">
+                </el-input-number>
+            </div>
+            <div class="block">
+                <span class="demonstration">mid</span>
+                <el-input-number v-model="infoObject.personInfo.mid">
+                </el-input-number>
+            </div>
+
+            <span slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="userDialogVisible = false">确 定</el-button>
+            </span>
+        </el-dialog>
+        <!-- userDialog -->
+        <!-- roomDialog -->
+        <el-dialog title="录制信息" :visible.sync="roomDialogVisible" width="40%" center>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">主播名</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="oneRoom.name" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div class="block"><span class="demonstration">是否投稿</span>
+                <el-switch v-model="oneRoom.uploadLocalFile" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
+            </div>
+            <div class="block"><span class="demonstration">是否删除本地视频文件</span>
+                <el-switch v-model="oneRoom.deleteLocalFile" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
+            </div>
+            <div class="block">
+                <span class="demonstration">投稿成功后延迟删除本地文件的时间（天）</span>
+                <el-input-number v-model="oneRoom.delayTime" label="天">
+                </el-input-number>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">稿件标题，支持占位符 </span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="oneRoom.templateTitle" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">稿件描述 </span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="oneRoom.desc" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">稿件来源</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-radio-group v-model="oneRoom.copyright">
+                            <el-radio-button label=1>自制</el-radio-button>
+                            <el-radio-button label=2>转载</el-radio-button>
+                        </el-radio-group>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">稿件直播源(需要copyright为2)</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="oneRoom.source" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">稿件动态</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="oneRoom.dynamic" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">直播间地址</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-input v-model="oneRoom.roomUrl" size="small"></el-input>
+                    </el-col>
+                </el-row>
+            </div>
+            <div class="block">
+                <span class="demonstration">稿件分区</span>
+                <el-input-number v-model="oneRoom.tid" label="tid">
+                </el-input-number>
+            </div>
+            <div>
+                <el-row>
+                    <el-col :span="12">
+                        <span class="demonstration">标签（至少一个）</span>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-tag :key="tag" v-for="tag in oneRoom.tags" closable :disable-transitions="false"
+                            @close="handleClose(tag)">
+                            {{tag}}
+                        </el-tag>
+                        <el-input class="input-new-tag" v-if="inputVisible" v-model="inputValue" ref="saveTagInput"
+                            size="small" @keyup.enter.native="handleInputConfirm" @blur="handleInputConfirm">
+                        </el-input>
+                        <el-button v-else class="button-new-tag" size="small" @click="showInput">+ 新标签</el-button>
+                    </el-col>
+                </el-row>
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="roomEvent">确 定</el-button>
+            </span>
+        </el-dialog>
+        <!-- roomDialog -->
+        <input type="file" id="files" ref="refFile" style="display: none" v-on:change="fileLoad">
+    </div>
+
+    <!-- Vue -->
+    <script src="https://cdn.staticfile.org/vue/2.6.14/vue.js"></script>
+    <script src="https://cdn.staticfile.org/element-ui/2.15.7/index.js"></script>
+    <script>
+        function download(filename, text) {
+            var element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+
+            element.style.display = 'none';
+            document.body.appendChild(element);
+
+            element.click();
+
+            document.body.removeChild(element);
+        }
+        const json_raw = `{"StreamerHelper":{"debug":false,"roomCheckTime":600,"recycleCheckTime":1800,"videoPartLimitSize":100,"logLevel":"error","push":{"mail":{"enable":true,"host":"","port":465,"from":"","pwd":"","to":"","secure":true},"wechat":{"enable":false,"sendkey":""}}},"personInfo":{"nickname":"","access_token":"","refresh_token":"","expires_in":0,"tokenSignDate":0,"mid":0},"streamerInfo":[{"name":"主播1","uploadLocalFile":true,"deleteLocalFile":true,"templateTitle":"{{name}}{{time}} 直播","delayTime":0,"desc":"","source":"","dynamic":"","copyright":2,"roomUrl":"https://live.xxx.com/111","tid":121,"tags":["tag1","tag2","tag3"]},{"name":"主播2","uploadLocalFile":true,"deleteLocalFile":false,"templateTitle":"{{name}}{{time}} 直播","delayTime":1,"desc":"","source":"","dynamic":"","copyright":2,"roomUrl":"https://live.xxx.com/222","tid":171,"tags":["tag1","tag2","tag3"]}]}`
+
+
+        function deepCopy(obj) {
+            let data = JSON.stringify(obj)
+            let newData = JSON.parse(data)
+            return newData
+
+        }
+
+        const room_raw =  {
+                    "name": "主播1",
+                    "uploadLocalFile": true,
+                    "deleteLocalFile": true,
+                    "templateTitle": "{{name}}{{time}} 直播",
+                    "delayTime": 0,
+                    "desc": "",
+                    "source": "",
+                    "dynamic": "",
+                    "copyright": 2,
+                    "roomUrl": "https://live.xxx.com/111",
+                    "tid": 121,
+                    "tags": [
+                        "tag1",
+                        "tag2",
+                        "tag3"
+                    ]
+                }
+
+        const vm = new Vue({
+            el: "#app",
+            data: {
+                title: "StreamerHelper配置助手",
+                version: '1.0',
+                infoObject: JSON.parse(json_raw),
+                userDialogVisible: false,
+                roomDialogVisible: false,
+                inputVisible: false,
+                inputValue: '',
+                roomFlag:-1,
+                userDialogValues: {
+                    "debug": false,
+                    "roomCheckTime": 600,
+                    "recycleCheckTime": 1800,
+                    "videoPartLimitSize": 100,
+                    "logLevel": "error",
+                    "push": {
+                        "mail": {
+                            "enable": true,
+                            "host": "smtp.qq.com",
+                            "port": 465,
+                            "from": "***@qq.com",
+                            "pwd": "***",
+                            "to": "***@gmail.com",
+                            "secure": true
+                        },
+                        "wechat": {
+                            "enable": true,
+                            "sendKey": "***"
+                        }
+                    },
+                    "personInfo": {
+                        "nickname": "",
+                        "access_token": "",
+                        "refresh_token": "",
+                        "expires_in": 0,
+                        "tokenSignDate": 0,
+                        "mid": 0
+                    }
+                },
+                oneRoom: deepCopy(room_raw)
+            },
+            methods: {
+                userInfo() {
+                    this.userDialogVisible = true;
+                },
+                handleClose(tag) {
+                    this.oneRoom.tags.splice(this.oneRoom.tags.indexOf(tag), 1);
+                },
+
+                showInput() {
+                    this.inputVisible = true;
+                    this.$nextTick(_ => {
+                        this.$refs.saveTagInput.$refs.input.focus();
+                    });
+                },
+
+                handleInputConfirm() {
+                    let inputValue = this.inputValue;
+                    if (inputValue) {
+                        this.oneRoom.tags.push(inputValue);
+                    }
+                    this.inputVisible = false;
+                    this.inputValue = '';
+                },
+
+                downloadInfoJson() {
+                    download('info.json', this.textarea1)
+                    this.$message({
+                        message: 'info.json下载成功',
+                        type: 'success'
+                    });
+                },
+
+                clickLoad() {
+
+                    this.$refs.refFile.dispatchEvent(new MouseEvent('click'))
+                },
+                fileLoad() {
+
+                    try {
+                        const selectedFile = this.$refs.refFile.files[0];
+
+                        var reader = new FileReader();
+                        reader.readAsText(selectedFile);
+                        reader.onload = function () {
+                            const obj = JSON.parse(this.result);
+                            vm.textarea1 = JSON.stringify(obj, null, "\t");
+                            vm.$message({
+                                message: '上传成功',
+                                type: 'success'
+                            });
+                        }
+
+                    } catch (error) {
+                        this.$message({
+                            showClose: true,
+                            message: '上传错误！',
+                            type: 'error'
+                        });
+                    }
+                },
+
+                deleteInfoJson() {
+                    this.textarea1 = json_raw;
+                },
+
+                card_add() {
+                    this.roomFlag = -1;
+                    this.oneRoom = deepCopy(room_raw);
+                    this.roomDialogVisible = true;
+                },
+                card_edit(index) {
+                    this.roomFlag = index;
+                    this.oneRoom = deepCopy(this.infoObject.streamerInfo[index]);
+                    this.roomDialogVisible = true;
+                },
+                card_copy(index) {
+                    const room = deepCopy(this.infoObject.streamerInfo[index]);
+                    this.infoObject.streamerInfo.push(room);
+                },
+                card_del(index) {
+                    this.infoObject.streamerInfo.splice(index, 1);
+                },
+                roomEvent() {
+                    this.roomDialogVisible = false;
+                    if(this.roomFlag==-1){
+                        this.infoObject.streamerInfo.push(this.oneRoom);
+                        this.oneRoom = deepCopy(room_raw);
+                    }else{
+                        const x =  deepCopy(this.oneRoom);
+                        this.infoObject.streamerInfo.splice(this.roomFlag,1,x);
+                        this.oneRoom = deepCopy(room_raw);
+                        console.log(this.textarea1);
+                    }
+                }
+
+            },
+            computed: {
+                textarea1: {
+                    set(value) {
+                        this.infoObject = JSON.parse(value);
+                    },
+                    get() {
+                        return JSON.stringify(this.infoObject, null, "\t")
+                    }
+                }
+
+            },
+        });
+
+    </script>
+</body>
+
+</html>
